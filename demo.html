@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live Demo – KeyReply AI</title>
+<meta name="description" content="Try KeyReply AI: enter a test lead and see the instant AI reply.">
+<style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;line-height:1.6;background:linear-gradient(135deg,#eff6ff,#fff);min-height:100vh}.wrap{max-width:760px;margin:auto;padding:0 20px}nav{padding:18px 0}.logo{font-weight:800;font-size:1.3rem;text-decoration:none;color:#0f172a}.logo span{color:#2563eb}h1{font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.2;margin:.3em 0}.card{background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(15,23,42,.08);padding:24px;margin:20px 0}label{display:block;font-weight:600;margin:12px 0 4px}input,textarea,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}button{margin-top:16px;background:#2563eb;color:#fff;border:0;padding:13px 22px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;width:100%}button:disabled{opacity:.6}.chat{display:flex;flex-direction:column;gap:10px}.b{max-width:85%;padding:10px 14px;border-radius:16px;white-space:pre-wrap}.lead{align-self:flex-end;background:#2563eb;color:#fff}.ai{align-self:flex-start;background:#f1f5f9}.meta{font-size:.8rem;color:#64748b}.err{color:#b91c1c}.cta{text-align:center}.btn{display:inline-block;background:#0f172a;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;margin:6px}footer{color:#64748b;font-size:.85rem;padding:30px 0;text-align:center}footer a{color:#64748b}</style></head><body>
+<div class="wrap"><nav><a class="logo" href="index.html">Key<span>Reply</span> AI</a></nav>
+<h1>See your AI assistant answer a lead, live</h1>
+<p>Pretend you're a buyer or seller who just filled out a form on your website or Zillow. Hit send and watch the reply your leads would get within 60 seconds. Then reply back to see it qualify them and offer a showing.</p>
+<div class="card"><form id="f">
+<label for="agent">Your name (the agent)</label><input id="agent" maxlength="60" placeholder="e.g. Sarah Lopez" required>
+<label for="name">Test lead's name</label><input id="name" maxlength="60" placeholder="e.g. Mike" required>
+<label for="channel">Reply by</label><select id="channel"><option value="sms">Text message (preview)</option><option value="email">Email</option></select>
+<label for="msg">What the lead is looking for</label><textarea id="msg" rows="3" maxlength="400" required placeholder="e.g. Saw the 3 bed on Oak St, is it still available? We're pre-approved and want to move by spring."></textarea>
+<button id="go">Send test lead</button></form></div>
+<div class="card" id="out" hidden><div class="meta" id="timer"></div><div class="chat" id="chat"></div>
+<form id="rf" hidden><label for="reply">Reply as the lead</label><input id="reply" maxlength="400" placeholder="Type a reply…"><button>Send reply</button></form></div>
+<div class="card cta"><h2 style="margin-top:0">Want this answering your leads?</h2><p>Set up in 5-7 business days. No contract.</p>
+<a class="btn" id="buy" href="#">Start now</a><a class="btn" style="background:#2563eb" href="mailto:contact@keyreplyai.com?subject=Questions%20about%20KeyReply%20AI">Ask a question</a></div>
+<footer>© 2026 KeyReply AI · 375 Redstone Dr, Sunnyvale, TX 75182 · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a><br>Demo only: don't enter real personal information.</footer></div>
+<script>
+/* ====== PLUG IN HERE ======
+   Set to your deployed Cloudflare Worker URL, e.g. https://keyreply-demo.<subdomain>.workers.dev/api/demo
+   Leave empty to use the built-in canned demo (works with no backend). */
+const API_ENDPOINT = "https://keyreply-demo.keyreplyai.workers.dev";
+/* Stripe Payment Link for the "Start now" button */
+const STRIPE_LINK = "";
+/* ========================== */
+if (STRIPE_LINK) document.getElementById('buy').href = STRIPE_LINK; else document.getElementById('buy').href='mailto:contact@keyreplyai.com?subject=Sign%20me%20up';
+const $=id=>document.getElementById(id);let history=[],ctx={};
+function bubble(t,c){const d=document.createElement('div');d.className='b '+c;d.textContent=t;$('chat').appendChild(d);d.scrollIntoView({behavior:'smooth',block:'nearest'});return d}
+function canned(){const n=ctx.name.split(' ')[0],a=ctx.agent.split(' ')[0];const turns=history.filter(m=>m.role==='user').length;
+ if(turns===1)return `Hi ${n}, this is ${a}'s assistant. Thanks for reaching out! Happy to help with that. Are you looking to buy in the next 1-3 months, and have you been pre-approved yet?`;
+ if(turns===2)return `Perfect, thanks ${n}! ${a} has openings tomorrow at 11am or Saturday at 2pm for a showing. Which works better?`;
+ return `You're all set! ${a} will confirm by text shortly. Anything else you'd like ${a} to know before then?`}
+async function ask(){const t0=performance.now();const typing=bubble('typing…','ai');let text;
+ try{if(!API_ENDPOINT){await new Promise(r=>setTimeout(r,1200));text=canned()}else{
+  const r=await fetch(API_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agent:ctx.agent,lead:ctx.name,channel:ctx.channel,messages:history})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'Demo busy');text=j.reply}
+  typing.textContent=text;history.push({role:'assistant',content:text});
+  $('timer').textContent=`Replied in ${((performance.now()-t0)/1000).toFixed(1)} seconds`;$('rf').hidden=history.length>=10;
+ }catch(e){typing.remove();text=canned();bubble(text,'ai');history.push({role:'assistant',content:text});$('timer').innerHTML='<span class="err">Live AI is busy, showing a sample reply.</span>';$('rf').hidden=history.length>=10}}
+$('f').onsubmit=async e=>{e.preventDefault();ctx={agent:$('agent').value.trim(),name:$('name').value.trim(),channel:$('channel').value};history=[{role:'user',content:$('msg').value.trim()}];
+ $('chat').innerHTML='';$('out').hidden=false;bubble($('msg').value.trim(),'lead');$('go').disabled=true;await ask();$('go').disabled=false};
+$('rf').onsubmit=async e=>{e.preventDefault();const v=$('reply').value.trim();if(!v)return;$('reply').value='';history.push({role:'user',content:v});bubble(v,'lead');await ask()};
+</script></body></html>
