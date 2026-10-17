@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://keyreplyai.com/sitemap.xml
