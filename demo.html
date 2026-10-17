@@ -21,7 +21,7 @@
    Leave empty to use the built-in canned demo (works with no backend). */
 const API_ENDPOINT = "https://keyreply-demo.keyreplyai.workers.dev";
 /* Stripe Payment Link for the "Start now" button */
-const STRIPE_LINK = "";
+const STRIPE_LINK = 'https://buy.stripe.com/7sY14ngKf61zbAi9DC08g00';
 /* ========================== */
 if (STRIPE_LINK) document.getElementById('buy').href = STRIPE_LINK; else document.getElementById('buy').href='mailto:contact@keyreplyai.com?subject=Sign%20me%20up';
 const $=id=>document.getElementById(id);let history=[],ctx={};
